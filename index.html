@@ -26,15 +26,16 @@
 
 <body>
   <div id="map"></div>
-  <script src="stations.js"></script>
-  <script src="distances.js"></script>
+  <script src="service.js"></script>
   <script src="NsMap.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA3fm2nNM9zzKKg00o7_ebGf2Ejc6vest0&callback=initMap">
   </script>
   <script>
     function initMap() {
-      const nsMap = new NsMap(document.getElementById('map'), stations, distances);
-      nsMap.render();
+      getStations().then(stations => {
+        const nsMap = new NsMap(document.getElementById('map'), stations);
+        nsMap.render();
+      });
     }
   </script>
 </body>

@@ -2,10 +2,9 @@ const normalStationColor = "black";
 const currentStationColor = "lime";
 
 class NsMap {
-  constructor(rootElement, stations, distances) {
+  constructor(rootElement, stations) {
     this.rootElement = rootElement;
     this.stations = stations;
-    this.distances = distances;
 
     this.map = null;
     this.codeToStation = new Map();
@@ -25,8 +24,6 @@ class NsMap {
   }
 
   renderStation(station) {
-    const point =  { lat: Number(station.lat), lng: Number(station.lon) };
-
     const circle = this.drawCircle(station, 500, normalStationColor, 1);
 
     circle.addListener("click", () => this.setCurrentStation(station));
@@ -40,22 +37,19 @@ class NsMap {
 
     this.currentStationMarker = this.drawCircle(station, 800, currentStationColor, 1);
 
-    this.updateDistanceMap(station);
+    getTimes(station.code)
+      .then(filteredDistances => this.updateDistanceMap(station, filteredDistances));
   }
 
-  updateDistanceMap(station) {
+  
+  updateDistanceMap(station, filteredDistances) {
     this.currentDistanceMap.forEach(circle => circle.setMap(null));
     this.currentDistanceMap = [];
 
-    const filteredDistances = this.distances.filter(row => row.from === station.code);
-
     filteredDistances.forEach(row => {
-        const timeParts = row.time.split(":");
-        const hours = parseInt(timeParts[0]);
-        const minutes = parseInt(timeParts[1]);
-        const time = hours + minutes / 60;
+        const time = row.time / 60;
 
-        const destination = this.codeToStation.get(row.to);
+        const destination = this.codeToStation.get(row.code);
 
         const color = timeToColor(time);
 
@@ -63,13 +57,24 @@ class NsMap {
         this.currentDistanceMap.push(circle);
 
         circle.addListener("click", () => this.setCurrentStation(destination));
-        const title = `${destination.name} - ${row.time} from ${station.name}`;
+        const humanReadableTime = this.formatTime(row.time);
+        const title = `${destination.name} - ${humanReadableTime} from ${station.name}`;
         this.addTooltip(circle, title);
     });
   }
 
+  formatTime(time) {
+    const hours = Math.floor(time / 60);
+    const minutes = time % 60;
+    let paddedMinutes = minutes.toString();
+    if (minutes < 10) {
+      paddedMinutes = "0" + paddedMinutes;
+    }
+    return `${hours}:${paddedMinutes}`;
+  }
+
   drawCircle(station, radius, color, opacity) {
-    const point =  { lat: Number(station.lat), lng: Number(station.lon) };
+    const point =  { lat: station.latitude, lng: station.longitude };
 
     return new google.maps.Circle({
       center: point,
